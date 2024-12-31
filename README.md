@@ -162,8 +162,8 @@ GET /fam/videos/{videoId}
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/harsh082ip/Fampay-Assignment
+cd Fampay-Assignment
 ```
 
 2. Install dependencies:
@@ -175,7 +175,7 @@ go mod download
 
 4. Run the application:
 ```bash
-go run cmd/main.go
+go run cmd/server/main.go
 ```
 
 ## Implementation Details

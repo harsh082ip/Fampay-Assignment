@@ -45,7 +45,6 @@ A scalable API service that continuously fetches latest YouTube videos for a giv
 │       ├── handler.go
 │       ├── routes.go
 │       └── youtube_service.go
-├── output.csv
 └── README.md
 ```
 

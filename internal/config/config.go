@@ -8,7 +8,9 @@ import (
 )
 
 type Config struct {
-	YoutubeApiKey      string
+	YoutubeApiKey1     string
+	YoutubeApiKey2     string
+	YoutubeApiKey3     string
 	PostgresServiceURI string
 }
 
@@ -22,7 +24,9 @@ func LoadConfig() {
 	}
 
 	AppConfig = Config{
-		YoutubeApiKey:      getEnv("YOUTUBE_API_KEY", "NA"),
+		YoutubeApiKey1:     getEnv("YOUTUBE_API_KEY1", "NA"),
+		YoutubeApiKey2:     getEnv("YOUTUBE_API_KEY2", ""),
+		YoutubeApiKey3:     getEnv("YOUTUBE_API_KEY3", ""),
 		PostgresServiceURI: getEnv("POSTGRES_SERVICE_URI", "NA"),
 	}
 	log.Println("Loaded Configurations...")

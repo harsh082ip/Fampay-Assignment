@@ -17,18 +17,43 @@ func FetchYouTubeVideos(searchQuery string) {
 	log.Println("Fetching Started...")
 	baseURL := "https://www.googleapis.com/youtube/v3/search"
 	nextPageToken := ""
-	ytApiKey := config.AppConfig.YoutubeApiKey
+
+	apiKeys := []string{
+		config.AppConfig.YoutubeApiKey1,
+		config.AppConfig.YoutubeApiKey2,
+		config.AppConfig.YoutubeApiKey3,
+	}
+	var currentKeyIndex int
 	var videosToInsert []models.Video
+
 	for {
+		// Use the current API key
+		currentApiKey := apiKeys[currentKeyIndex]
+		log.Printf("Using API key #%d: %s\n", currentKeyIndex+1, currentApiKey)
+
 		url := fmt.Sprintf(
 			"%s?part=snippet&maxResults=10&q=%s&type=video&pageToken=%s&key=%s",
-			baseURL, searchQuery, nextPageToken, ytApiKey,
+			baseURL, searchQuery, nextPageToken, currentApiKey,
 		)
 
 		// make HTTP request
 		resp, err := http.Get(url)
 		if err != nil {
 			log.Fatalf("Error Fetching Videos Info, error: %v", err)
+		}
+		defer resp.Body.Close()
+
+		// Check if the quota is exhausted or a quota error occurred
+		if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests {
+			log.Printf("Quota exhausted for API key #%d, switching to the next key...", currentKeyIndex+1)
+
+			// Try the next API key if available
+			currentKeyIndex = (currentKeyIndex + 1) % len(apiKeys)
+			if currentKeyIndex == 0 {
+				log.Fatal("All API keys have exhausted their quota")
+			}
+			time.Sleep(time.Second * 5) // wait a bit before retrying with the new key
+			continue
 		}
 
 		// Parse body
@@ -42,6 +67,7 @@ func FetchYouTubeVideos(searchQuery string) {
 			log.Fatalf("Failed to parse JSON response: %v", err)
 		}
 
+		// Process the API response
 		for _, item := range apiResponse.Items {
 			publishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishTime)
 			if err != nil {
@@ -49,7 +75,6 @@ func FetchYouTubeVideos(searchQuery string) {
 				continue
 			}
 
-			// Marshal thumbnails into JSON
 			thumbnailURLs, err := json.Marshal([]string{
 				item.Snippet.Thumbnails.Default.URL,
 				item.Snippet.Thumbnails.Medium.URL,
@@ -60,7 +85,6 @@ func FetchYouTubeVideos(searchQuery string) {
 				continue
 			}
 
-			// Handle nullable fields
 			var description *string
 			if item.Snippet.Description != "" {
 				description = &item.Snippet.Description
@@ -92,12 +116,12 @@ func FetchYouTubeVideos(searchQuery string) {
 			videosToInsert = nil
 		}
 
+		// If there are no more pages, break the loop
 		if apiResponse.NextPageToken == "" {
 			break
 		}
 
 		nextPageToken = apiResponse.NextPageToken
-
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 10) // Pause between requests to avoid quota issues
 	}
 }

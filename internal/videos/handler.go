@@ -1,6 +1,7 @@
 package videos
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/harsh082ip/Fampay-Assignment/internal/db/postgres_db"
 	"github.com/harsh082ip/Fampay-Assignment/internal/helpers"
 	"github.com/harsh082ip/Fampay-Assignment/internal/models"
+	"gorm.io/gorm"
 )
 
 func GetVideos(c *gin.Context) {
@@ -173,4 +175,36 @@ func GetVideos(c *gin.Context) {
 
 	log.Println(len(apiResponse.Videos))
 	c.JSON(http.StatusOK, apiResponse)
+}
+
+func GetVideoByID(c *gin.Context) {
+	videoID := c.Param("id")
+	if videoID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "Bad Request",
+			"error":  "video ID is required",
+		})
+		return
+	}
+
+	var video models.Video
+
+	result := postgres_db.DB.Where("video_id = ?", videoID).First(&video)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"status": "Not Found",
+				"error":  "video not found",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "Internal Server Error",
+			"error":  "failed to fetch video: " + result.Error.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, video)
 }

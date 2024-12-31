@@ -54,3 +54,8 @@ type Video struct {
 	PublishedAt   time.Time `gorm:"type:timestamp;not null" json:"publishedAt"`
 	ThumbnailURLs *string   `gorm:"type:text" json:"thumbnails"`
 }
+
+type ApiResponse struct {
+	PageToken string  `json:"pageToken"`
+	Videos    []Video `json:"videos"`
+}
